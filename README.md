@@ -1,12 +1,32 @@
-# Logbook
+# Harness
 
-A self-contained protocol for AI-assisted project work. Tracks sessions, decisions, issues, and backlog — so any engineer or agent can pick up where the last one left off, cold, without asking questions.
+A workflow harness for AI-assisted project work in [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Three skills that compose: a logbook for project memory, a trawl for multi-agent document retrieval, and a loop for recurring tasks.
 
-Built for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) as a skill.
+## Skills
+
+| Skill | What it does |
+|-------|-------------|
+| **logbook** | Session tracking, decisions, issues, and handoff notes. Any engineer or agent can pick up cold. |
+| **trawl** | Coordinated multi-agent retrieval across documents too large for one context window. Protocol-aware subagents extract structured findings in parallel. |
+| **ralph** | Logbook-grounded loop for recurring or long-running tasks. Reads project state, works iteratively, writes session entries on completion. |
 
 ## Install
 
-Copy `logbook.md` into your Claude Code skills directory (e.g. `.claude/skills/` or wherever you keep custom skills).
+Copy the skill files into your Claude Code skills directory:
+
+```
+logbook.md  →  ~/.claude/commands/logbook.md
+trawl.md    →  ~/.claude/commands/trawl.md
+ralph.md    →  ~/.claude/commands/ralph.md
+```
+
+Trawl also requires a custom subagent definition:
+
+```
+~/.claude/agents/trawl-worker.md
+```
+
+See `trawl.md` for the worker protocol. Restart your session after adding the agent.
 
 ## Usage
 
@@ -18,25 +38,21 @@ Copy `logbook.md` into your Claude Code skills directory (e.g. `.claude/skills/`
 /logbook status         — Quick summary of what's in flight
 /logbook issue [desc]   — Add a known issue
 /logbook decide [title] — Record a decision
+
+/trawl plan [source] [query]  — Define a trawl mission
+/trawl run                    — Spawn agents and collect results
+/trawl results                — View synthesized findings
+/trawl rerun [chunk_ids]      — Re-trawl specific chunks
+
+/ralph <prompt>                        — Start a logbook-grounded loop
+/ralph <prompt> --max-iterations N     — Loop with iteration limit
 ```
 
-## How it works
+## How they compose
 
-The logbook creates a `LOGBOOK.md` in your project that acts as living memory:
-
-- **Session start/end protocol** — agents read context on start, write a handoff note on end. The file stays current by default.
-- **"Next session start from:"** — mandatory field in every session entry. Eliminates cold-start overhead.
-- **Threshold-based splitting** — sections auto-detect when they're getting too long and ask before archiving to child docs.
-- **Staleness detection** — flags stale state and old issues so you don't trust outdated information.
-- **Multi-engineer safety** — active session tracking so parallel workers don't step on each other.
-
-## What's in the box
-
-```
-logbook.md   — The skill definition (drop this into your skills)
-LICENSE      — MIT
-README.md    — You're reading it
-```
+- **Trawl requires logbook** — trawl runs are tracked as logbook sessions. Findings that need decisions flow into the logbook's decision log. Failed chunks become known issues.
+- **Ralph reads logbook** — the loop grounds itself in Current State before starting work, and writes a session entry when done.
+- **Logbook stands alone** — works without the other two. Add trawl and ralph when you need them.
 
 ## License
 
